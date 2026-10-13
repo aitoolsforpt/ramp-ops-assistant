@@ -1,0 +1,17 @@
+[
+  {"id": "V01", "texto": "Un pasajero denuncia que su mochila ha llegado mojada tras la descarga del XX2101; se levanta parte de daños.", "tipo": "equipaje", "gravedad": "media", "aprobacion": false},
+  {"id": "V02", "texto": "Se detecta una grieta en el neumático del remolque R-12 durante la inspección previa; se retira de servicio.", "tipo": "equipo_gse", "gravedad": "media", "aprobacion": false},
+  {"id": "V03", "texto": "Un compañero entra en la zona de hélices sin autorización con el motor de un turbohélice en marcha.", "tipo": "seguridad_prl", "gravedad": "critica", "aprobacion": true},
+  {"id": "V04", "texto": "El número de bultos cargados en la bodega 2 no coincide con la hoja de carga y se corrige a pie de avión sin afectar a la hora de salida.", "tipo": "documentacion", "gravedad": "media", "aprobacion": false},
+  {"id": "V05", "texto": "Hoy no ha venido el segundo operario del turno de tarde y la salida del XX2230 se retrasa 12 minutos.", "tipo": "personal", "gravedad": "alta", "aprobacion": true},
+  {"id": "V06", "texto": "La carga de mercancía se coloca con el peso desequilibrado hacia popa y el cargador lo detecta antes del cierre; se redistribuye.", "tipo": "carga_balance", "gravedad": "alta", "aprobacion": true},
+  {"id": "V07", "texto": "Hay un cartel de señalización caído en el puesto 9, sin riesgo inmediato.", "tipo": "otro", "gravedad": "baja", "aprobacion": false},
+  {"id": "V08", "texto": "Equipaje de mano con una pegatina de prioridad equivocada; se retira y se reemplaza.", "tipo": "equipaje", "gravedad": "baja", "aprobacion": false},
+  {"id": "V09", "texto": "Fuga de aceite hidráulico en el camión de catering junto a la aeronave; se acordona el área y se avisa al jefe de turno.", "tipo": "seguridad_prl", "gravedad": "critica", "aprobacion": true},
+  {"id": "V10", "texto": "El operador de la cinta no tiene la formación de manejo actualizada y es sustituido por otra persona sin consecuencias en la operación.", "tipo": "personal", "gravedad": "media", "aprobacion": false},
+  {"id": "V11", "texto": "El sistema de la hoja de carga se cuelga durante 8 minutos y obliga a calcular a mano; el vuelo sale a su hora.", "tipo": "documentacion", "gravedad": "media", "aprobacion": false},
+  {"id": "V12", "texto": "Operario con quemadura leve en la mano al tocar un tubo de escape; se atiende en la enfermería.", "tipo": "seguridad_prl", "gravedad": "alta", "aprobacion": true},
+  {"id": "V13", "texto": "Carro de equipaje con una cadena de enganche floja; se ata de forma provisional y se programa la reparación.", "tipo": "equipo_gse", "gravedad": "baja", "aprobacion": false},
+  {"id": "V14", "texto": "Cambio de última hora de la puerta de embarque; el equipo de equipajes tarda 5 minutos más en llegar y no hay retraso.", "tipo": "otro", "gravedad": "baja", "aprobacion": false},
+  {"id": "V15", "texto": "Mercancía con la etiqueta de peligrosa pero sin la declaración firmada; se detiene la carga hasta resolverlo y el vuelo se retrasa 30 minutos.", "tipo": "documentacion", "gravedad": "critica", "aprobacion": true}
+]

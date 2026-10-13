@@ -1,0 +1,92 @@
+[
+  {
+    "tipo": "equipaje",
+    "gravedad": "media",
+    "aprobacion": false,
+    "id": "V01"
+  },
+  {
+    "tipo": "equipo_gse",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V02"
+  },
+  {
+    "tipo": "seguridad_prl",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "id": "V03"
+  },
+  {
+    "tipo": "documentacion",
+    "gravedad": "media",
+    "aprobacion": false,
+    "id": "V04"
+  },
+  {
+    "tipo": "personal",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V05"
+  },
+  {
+    "tipo": "carga_balance",
+    "gravedad": "media",
+    "aprobacion": false,
+    "id": "V06"
+  },
+  {
+    "tipo": "seguridad_prl",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "id": "V07"
+  },
+  {
+    "tipo": "documentacion",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "id": "V08"
+  },
+  {
+    "tipo": "equipo_gse",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V09"
+  },
+  {
+    "tipo": "personal",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V10"
+  },
+  {
+    "tipo": "documentacion",
+    "gravedad": "media",
+    "aprobacion": false,
+    "id": "V11"
+  },
+  {
+    "tipo": "seguridad_prl",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V12"
+  },
+  {
+    "tipo": "equipo_gse",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "id": "V13"
+  },
+  {
+    "tipo": "equipo_gse",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "id": "V14"
+  },
+  {
+    "tipo": "seguridad_prl",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V15"
+  }
+]

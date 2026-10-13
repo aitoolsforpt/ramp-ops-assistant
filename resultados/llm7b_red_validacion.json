@@ -1,0 +1,119 @@
+[
+  {
+    "tipo": "equipaje",
+    "gravedad": "media",
+    "aprobacion": false,
+    "id": "V01",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "equipo_gse",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V02",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "seguridad_prl",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "id": "V03",
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ]
+  },
+  {
+    "tipo": "documentacion",
+    "gravedad": "media",
+    "aprobacion": false,
+    "id": "V04",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "personal",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V05",
+    "motivos_seguridad": [
+      "señal alta o retraso ≥ 10 min"
+    ]
+  },
+  {
+    "tipo": "carga_balance",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V06",
+    "motivos_seguridad": [
+      "señal alta o retraso ≥ 10 min"
+    ]
+  },
+  {
+    "tipo": "seguridad_prl",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "id": "V07",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "documentacion",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "id": "V08",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "equipo_gse",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "id": "V09",
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ]
+  },
+  {
+    "tipo": "personal",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "id": "V10",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "documentacion",
+    "gravedad": "media",
+    "aprobacion": false,
+    "id": "V11",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "seguridad_prl",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "id": "V12",
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ]
+  },
+  {
+    "tipo": "equipo_gse",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "id": "V13",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "equipo_gse",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "id": "V14",
+    "motivos_seguridad": []
+  },
+  {
+    "tipo": "seguridad_prl",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "id": "V15",
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ]
+  }
+]
