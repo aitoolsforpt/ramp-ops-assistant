@@ -5,8 +5,10 @@ Flujo:
     -> Preparar petición (prompt + esquema JSON)
     -> Modelo local (Ollama) con reintento
     -> Validar + red de seguridad + registro   (nunca se pierde una incidencia)
+    -> Aviso simulado por gravedad
     -> IF aprobación -> estado «pendiente de aprobación» | «registrada»
   GET /webhook/informe -> resumen por tipo, gravedad y estado
+  GET /webhook/avisos -> avisos simulados enrutados por gravedad
   GET /webhook/pendientes -> incidencias esperando aprobación, con enlaces aprobar/rechazar
   GET /webhook/decision?id=..&accion=aprobar|rechazar -> registra la decisión humana
 
@@ -70,7 +72,7 @@ try {
 }
 const t = prep.texto;
 const CRIT = /\b(fuego|humo|llamas?|incendio|combustible|derrame|fuga|peligros[ao]|h[eé]lices?|atrapad[oa]|herid[oa]s?|lesi[oó]n|quemadura|desmay\w*|colisi[oó]n|choque|explosi\w*)\b/i;
-const ALTA = /(sin chaleco|sin formaci[oó]n|formaci[oó]n vigente|cable pelado|exceso de peso|desequilibr\w*|peso (distinto|inferior|superior)|resbal\w*|impact\w*|dolor de espalda|sin protectores|sin autorizaci[oó]n)/i;
+const ALTA = /(sin chaleco|sin formaci[oó]n|formaci[oó]n vigente|cable pelado|exceso de peso|desequilibr\w*|peso (distinto|inferior|superior)|resbal\w*|impact\w*|dolor de espalda|sin protectores|sin autorizaci[oó]n|(?:bodega|puerta|compuerta|escotilla)[^.;]{0,40}(?:sin cerrar|sin asegurar|mal cerrad\w*|no cierra))/i;
 const MIN = /(?:retras\w*[^.;]{0,60}?(\d+)\s*minutos|(\d+)\s*minutos\s*(?:de\s*)?(?:retraso|tarde))/i;
 const m = MIN.exec(t);
 const retraso = m ? parseInt(m[1] || m[2], 10) : 0;
@@ -128,6 +130,27 @@ x.decidido_en = new Date().toISOString();
 return [{ json: { ok: true, id: x.id, estado: x.estado, decidido_en: x.decidido_en } }];
 """
 
+AVISO = r"""// Aviso SIMULADO enrutado por gravedad: no envia nada; deja constancia en el registro de avisos.
+// En produccion este nodo se sustituye por Telegram / Gmail / Slack (credenciales del propietario).
+const x = $input.first().json;
+const sd = $getWorkflowStaticData('global');
+sd.avisos = sd.avisos || [];
+const RUTA = {
+  critica: { destino: 'Shift manager + safety officer', canal: 'chat (simulated)', plazo: 'immediate' },
+  alta:    { destino: 'Ramp supervisor', canal: 'email (simulated)', plazo: 'immediate, with approve/reject links' },
+  media:   { destino: 'End-of-shift digest', canal: 'digest (simulated)', plazo: 'end of shift' },
+};
+const r = RUTA[x.gravedad];
+if (r) sd.avisos.push({ id: x.id, gravedad: x.gravedad, ...r, texto: x.texto, fecha: new Date().toISOString() });
+if (sd.avisos.length > 200) sd.avisos = sd.avisos.slice(-200);
+return [{ json: { ...x, aviso: r ? r.destino : 'none (log only)' } }];
+"""
+
+AVISOS = r"""const sd = $getWorkflowStaticData('global');
+const av = sd.avisos || [];
+return [{ json: { total: av.length, avisos: av.slice(-20).reverse() } }];
+"""
+
 
 def nodo(nombre, tipo, version, pos, params, **extra):
     n = {"parameters": params, "id": str(uuid.uuid4()), "name": nombre, "type": tipo, "typeVersion": version, "position": pos}
@@ -152,7 +175,8 @@ nodes = [
         "options": {"timeout": 300000},
     }, retryOnFail=True, maxTries=2, waitBetweenTries=2000, onError="continueRegularOutput"),
     nodo("Validar y registrar", "n8n-nodes-base.code", 2, [660, 0], {"jsCode": VALIDAR}),
-    nodo("Requiere aprobacion?", "n8n-nodes-base.if", 2, [880, 0], {
+    nodo("Aviso simulado por gravedad", "n8n-nodes-base.code", 2, [880, 0], {"jsCode": AVISO}),
+    nodo("Requiere aprobacion?", "n8n-nodes-base.if", 2, [1100, 0], {
         "conditions": {
             "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict", "version": 2},
             "conditions": [{"id": str(uuid.uuid4()), "leftValue": "={{ $json.aprobacion }}", "rightValue": True,
@@ -160,14 +184,17 @@ nodes = [
             "combinator": "and",
         }, "options": {},
     }),
-    set_estado("Pendiente de aprobacion", [1100, -100], "pendiente_de_aprobacion_humana"),
-    set_estado("Registrada", [1100, 100], "registrada"),
+    set_estado("Pendiente de aprobacion", [1320, -100], "pendiente_de_aprobacion_humana"),
+    set_estado("Registrada", [1320, 100], "registrada"),
     nodo("Webhook informe", "n8n-nodes-base.webhook", 2, [0, 300],
          {"httpMethod": "GET", "path": "informe", "responseMode": "lastNode", "options": {}}, webhookId=str(uuid.uuid4())),
     nodo("Resumen", "n8n-nodes-base.code", 2, [220, 300], {"jsCode": INFORME}),
     nodo("Webhook pendientes", "n8n-nodes-base.webhook", 2, [0, 500],
          {"httpMethod": "GET", "path": "pendientes", "responseMode": "lastNode", "options": {}}, webhookId=str(uuid.uuid4())),
     nodo("Listar pendientes", "n8n-nodes-base.code", 2, [220, 500], {"jsCode": PENDIENTES}),
+    nodo("Webhook avisos", "n8n-nodes-base.webhook", 2, [0, 900],
+         {"httpMethod": "GET", "path": "avisos", "responseMode": "lastNode", "options": {}}, webhookId=str(uuid.uuid4())),
+    nodo("Listar avisos", "n8n-nodes-base.code", 2, [220, 900], {"jsCode": AVISOS}),
     nodo("Webhook decision", "n8n-nodes-base.webhook", 2, [0, 700],
          {"httpMethod": "GET", "path": "decision", "responseMode": "lastNode", "options": {}}, webhookId=str(uuid.uuid4())),
     nodo("Registrar decision", "n8n-nodes-base.code", 2, [220, 700], {"jsCode": DECIDIR}),
@@ -177,13 +204,15 @@ conexiones = {
     "Webhook incidencia": {"main": [[{"node": "Preparar peticion", "type": "main", "index": 0}]]},
     "Preparar peticion": {"main": [[{"node": "Modelo local (Ollama)", "type": "main", "index": 0}]]},
     "Modelo local (Ollama)": {"main": [[{"node": "Validar y registrar", "type": "main", "index": 0}]]},
-    "Validar y registrar": {"main": [[{"node": "Requiere aprobacion?", "type": "main", "index": 0}]]},
+    "Validar y registrar": {"main": [[{"node": "Aviso simulado por gravedad", "type": "main", "index": 0}]]},
+    "Aviso simulado por gravedad": {"main": [[{"node": "Requiere aprobacion?", "type": "main", "index": 0}]]},
     "Requiere aprobacion?": {"main": [
         [{"node": "Pendiente de aprobacion", "type": "main", "index": 0}],
         [{"node": "Registrada", "type": "main", "index": 0}],
     ]},
     "Webhook informe": {"main": [[{"node": "Resumen", "type": "main", "index": 0}]]},
     "Webhook pendientes": {"main": [[{"node": "Listar pendientes", "type": "main", "index": 0}]]},
+    "Webhook avisos": {"main": [[{"node": "Listar avisos", "type": "main", "index": 0}]]},
     "Webhook decision": {"main": [[{"node": "Registrar decision", "type": "main", "index": 0}]]},
 }
 

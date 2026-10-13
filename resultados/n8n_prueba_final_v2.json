@@ -1,0 +1,213 @@
+[
+  {
+    "id": "T01",
+    "texto": "Un pasajero dice que le falta una maleta del XX3010; tras buscar, aparece en otra cinta y se entrega sin retraso.",
+    "tipo": "equipaje",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "motivos_seguridad": [],
+    "fecha": "2026-10-13T18:10:27.129Z",
+    "estado": "registrada",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "none (log only)"
+  },
+  {
+    "id": "T02",
+    "texto": "La barredora de plataforma deja de funcionar y se retrasa 15 minutos la limpieza del puesto; no afecta a ningún vuelo.",
+    "tipo": "equipo_gse",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal alta o retraso >= 10 min"
+    ],
+    "fecha": "2026-10-13T18:10:35.330Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Ramp supervisor"
+  },
+  {
+    "id": "T03",
+    "texto": "Un operario se queda atrapado un momento entre la cinta y la bodega; se detiene la cinta y recibe atención médica.",
+    "tipo": "seguridad_prl",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ],
+    "fecha": "2026-10-13T18:10:40.532Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Shift manager + safety officer"
+  },
+  {
+    "id": "T04",
+    "texto": "El peso declarado en el manifiesto es 800 kg inferior al real; se corrige tras comprobarlo y la salida se retrasa 20 minutos.",
+    "tipo": "carga_balance",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal alta o retraso >= 10 min"
+    ],
+    "fecha": "2026-10-13T18:10:48.750Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Ramp supervisor"
+  },
+  {
+    "id": "T05",
+    "texto": "Se solapan dos vuelos y no hay equipo suficiente para el segundo; se llama a refuerzo y sale con 10 minutos de retraso.",
+    "tipo": "equipo_gse",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ],
+    "fecha": "2026-10-13T18:10:57.501Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Shift manager + safety officer"
+  },
+  {
+    "id": "T06",
+    "texto": "Un contenedor de carga se encuentra mal anclado antes del cierre de bodega; se vuelve a asegurar a tiempo.",
+    "tipo": "carga_balance",
+    "gravedad": "media",
+    "aprobacion": false,
+    "motivos_seguridad": [],
+    "fecha": "2026-10-13T18:11:05.452Z",
+    "estado": "registrada",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "End-of-shift digest"
+  },
+  {
+    "id": "T07",
+    "texto": "Hay un charco de agua junto a la puerta del almacén, se avisa a limpieza.",
+    "tipo": "otro",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "motivos_seguridad": [],
+    "fecha": "2026-10-13T18:11:10.250Z",
+    "estado": "registrada",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "none (log only)"
+  },
+  {
+    "id": "T08",
+    "texto": "Un operario no lleva protectores auditivos durante el arranque de un motor, el supervisor lo detiene y se le llama la atención.",
+    "tipo": "seguridad_prl",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ],
+    "fecha": "2026-10-13T18:11:19.101Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Shift manager + safety officer"
+  },
+  {
+    "id": "T09",
+    "texto": "Una maleta con una pieza de cristal aparece rota y el pasajero reclama una indemnización alta.",
+    "tipo": "equipaje",
+    "gravedad": "media",
+    "aprobacion": false,
+    "motivos_seguridad": [],
+    "fecha": "2026-10-13T18:11:28.644Z",
+    "estado": "registrada",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "End-of-shift digest"
+  },
+  {
+    "id": "T10",
+    "texto": "El conductor del camión de combustible aparca con el freno sin accionar junto a la aeronave; se detecta y se corrige antes de que se mueva.",
+    "tipo": "seguridad_prl",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ],
+    "fecha": "2026-10-13T18:11:37.173Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Shift manager + safety officer"
+  },
+  {
+    "id": "T11",
+    "texto": "La firma digital del parte de turno no se guarda por un fallo del sistema; se repite en papel.",
+    "tipo": "documentacion",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "motivos_seguridad": [],
+    "fecha": "2026-10-13T18:11:42.163Z",
+    "estado": "registrada",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "none (log only)"
+  },
+  {
+    "id": "T12",
+    "texto": "Falta la persona que manejaba el tractor en el turno de noche y no hay suplente; el vuelo sale 25 minutos tarde.",
+    "tipo": "personal",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal alta o retraso >= 10 min"
+    ],
+    "fecha": "2026-10-13T18:11:50.643Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Ramp supervisor"
+  },
+  {
+    "id": "T13",
+    "texto": "La plataforma elevadora de equipajes no sube a la altura requerida; se usa la cinta manual con un pequeño retraso en la descarga.",
+    "tipo": "equipo_gse",
+    "gravedad": "media",
+    "aprobacion": false,
+    "motivos_seguridad": [],
+    "fecha": "2026-10-13T18:11:55.810Z",
+    "estado": "registrada",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "End-of-shift digest"
+  },
+  {
+    "id": "T14",
+    "texto": "Hoja de carga entregada con 5 minutos de retraso al comandante; sin consecuencias.",
+    "tipo": "documentacion",
+    "gravedad": "baja",
+    "aprobacion": false,
+    "motivos_seguridad": [],
+    "fecha": "2026-10-13T18:11:57.423Z",
+    "estado": "registrada",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "none (log only)"
+  },
+  {
+    "id": "T15",
+    "texto": "Se detecta humo saliendo de una batería de un equipo de tierra junto a la aeronave; se activa la alarma y se evacúa la zona.",
+    "tipo": "seguridad_prl",
+    "gravedad": "critica",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal crítica en el texto"
+    ],
+    "fecha": "2026-10-13T18:11:59.188Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Shift manager + safety officer"
+  }
+]

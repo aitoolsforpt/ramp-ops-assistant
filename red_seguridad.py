@@ -14,7 +14,8 @@ CRITICAS = re.compile(
 )
 ALTAS = re.compile(
     r"(sin chaleco|sin formaci[oó]n|formaci[oó]n vigente|cable pelado|exceso de peso|desequilibr\w*|"
-    r"peso (distinto|inferior|superior)|resbal\w*|impact\w*|dolor de espalda|sin protectores|sin autorizaci[oó]n)",
+    r"peso (distinto|inferior|superior)|resbal\w*|impact\w*|dolor de espalda|sin protectores|sin autorizaci[oó]n"
+    r"|(?:bodega|puerta|compuerta|escotilla)[^.;]{0,40}(?:sin cerrar|sin asegurar|mal cerrad\w*|no cierra))",
     re.IGNORECASE,
 )
 MINUTOS = re.compile(

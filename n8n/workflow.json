@@ -10,7 +10,7 @@
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "f81d9d3d-75c3-47d7-8776-412c1a463921",
+        "id": "48f3ff4e-9629-4d84-9dcb-cf1889bd8b09",
         "name": "Webhook incidencia",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -18,13 +18,13 @@
           0,
           0
         ],
-        "webhookId": "acb78276-d80e-4b36-8ab1-88cb09b90ea6"
+        "webhookId": "75be6604-0a4d-42a3-901d-ba2d992969d9"
       },
       {
         "parameters": {
           "jsCode": "const body = $input.first().json.body || {};\nconst texto = String(body.texto || '').trim();\nconst esquema = {\n  type: 'object',\n  properties: {\n    tipo: { type: 'string', enum: ['equipaje','carga_balance','equipo_gse','seguridad_prl','personal','documentacion','otro'] },\n    gravedad: { type: 'string', enum: ['baja','media','alta','critica'] },\n    aprobacion: { type: 'boolean' },\n  },\n  required: ['tipo','gravedad','aprobacion'],\n};\nconst modelo = 'qwen2.5:7b-instruct';\nreturn [{ json: {\n  id: body.id || ('INC-' + Date.now()),\n  texto,\n  ollamaBody: {\n    model: modelo, stream: false, format: esquema, options: { temperature: 0 },\n    messages: [ { role: 'system', content: 'Eres un asistente de operaciones de rampa de un aeropuerto. Clasifica cada incidencia.\\nTipos: equipaje, carga_balance, equipo_gse, seguridad_prl, personal, documentacion, otro.\\nGravedad:\\n- critica: riesgo para personas o para la seguridad de la aeronave (fuego, derrame peligroso, zona de hélices, mercancía peligrosa sin documentación).\\n- alta: retraso notable (10 minutos o más), daño material relevante, lesión de una persona o incumplimiento de seguridad.\\n- media: incidencia gestionada sin retraso que afecta al proceso.\\n- baja: informativa o sin impacto.\\naprobacion es true si la gravedad es alta o critica, y false en otro caso.\\nResponde solo con el JSON pedido.' }, { role: 'user', content: texto } ],\n  },\n} }];\n"
         },
-        "id": "62d3001c-ebc6-4ef3-aa36-b8974e9c52c3",
+        "id": "4a17c226-ce63-4099-81ed-5785e87430a4",
         "name": "Preparar peticion",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -44,7 +44,7 @@
             "timeout": 300000
           }
         },
-        "id": "8d437808-afbc-48f5-8e0c-64f1bffd32c5",
+        "id": "4febe131-86ab-4d52-9ec7-df7420ebe40b",
         "name": "Modelo local (Ollama)",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.2,
@@ -59,14 +59,27 @@
       },
       {
         "parameters": {
-          "jsCode": "// Valida la salida del modelo, aplica la red de seguridad y registra SIEMPRE la incidencia.\nconst prep = $('Preparar peticion').first().json;\nconst entrada = $input.first().json;\nconst ORDEN = ['baja','media','alta','critica'];\nconst TIPOS = ['equipaje','carga_balance','equipo_gse','seguridad_prl','personal','documentacion','otro'];\nlet r = {}; let motivos = [];\ntry {\n  if (entrada.error) throw new Error('fallo del modelo');\n  r = JSON.parse(entrada.message.content);\n} catch (e) {\n  r = { tipo: null, gravedad: null, aprobacion: null };\n  motivos.push('respuesta inválida o error del modelo');\n}\nconst t = prep.texto;\nconst CRIT = /\\b(fuego|humo|llamas?|incendio|combustible|derrame|fuga|peligros[ao]|h[eé]lices?|atrapad[oa]|herid[oa]s?|lesi[oó]n|quemadura|desmay\\w*|colisi[oó]n|choque|explosi\\w*)\\b/i;\nconst ALTA = /(sin chaleco|sin formaci[oó]n|formaci[oó]n vigente|cable pelado|exceso de peso|desequilibr\\w*|peso (distinto|inferior|superior)|resbal\\w*|impact\\w*|dolor de espalda|sin protectores|sin autorizaci[oó]n)/i;\nconst MIN = /(?:retras\\w*[^.;]{0,60}?(\\d+)\\s*minutos|(\\d+)\\s*minutos\\s*(?:de\\s*)?(?:retraso|tarde))/i;\nconst m = MIN.exec(t);\nconst retraso = m ? parseInt(m[1] || m[2], 10) : 0;\nlet piso = null;\nif (CRIT.test(t)) { piso = 'critica'; motivos.push('señal crítica en el texto'); }\nelse if (ALTA.test(t) || retraso >= 10) { piso = 'alta'; motivos.push('señal alta o retraso >= 10 min'); }\nif (piso && (!ORDEN.includes(r.gravedad) || ORDEN.indexOf(r.gravedad) < ORDEN.indexOf(piso))) r.gravedad = piso;\nif (['alta','critica'].includes(r.gravedad)) r.aprobacion = true;\nif (!ORDEN.includes(r.gravedad) || !TIPOS.includes(r.tipo)) { r.aprobacion = true; if (!motivos.length) motivos.push('clasificación inválida'); }\nconst registro = { id: prep.id, texto: t, tipo: r.tipo, gravedad: r.gravedad, aprobacion: r.aprobacion, motivos_seguridad: motivos, fecha: new Date().toISOString(),\n  estado: r.aprobacion ? 'pendiente_de_aprobacion' : 'registrada', decision: null, decidido_en: null };\nconst sd = $getWorkflowStaticData('global');\nsd.registro = sd.registro || [];\nsd.registro.push(registro);\nreturn [{ json: registro }];\n"
+          "jsCode": "// Valida la salida del modelo, aplica la red de seguridad y registra SIEMPRE la incidencia.\nconst prep = $('Preparar peticion').first().json;\nconst entrada = $input.first().json;\nconst ORDEN = ['baja','media','alta','critica'];\nconst TIPOS = ['equipaje','carga_balance','equipo_gse','seguridad_prl','personal','documentacion','otro'];\nlet r = {}; let motivos = [];\ntry {\n  if (entrada.error) throw new Error('fallo del modelo');\n  r = JSON.parse(entrada.message.content);\n} catch (e) {\n  r = { tipo: null, gravedad: null, aprobacion: null };\n  motivos.push('respuesta inválida o error del modelo');\n}\nconst t = prep.texto;\nconst CRIT = /\\b(fuego|humo|llamas?|incendio|combustible|derrame|fuga|peligros[ao]|h[eé]lices?|atrapad[oa]|herid[oa]s?|lesi[oó]n|quemadura|desmay\\w*|colisi[oó]n|choque|explosi\\w*)\\b/i;\nconst ALTA = /(sin chaleco|sin formaci[oó]n|formaci[oó]n vigente|cable pelado|exceso de peso|desequilibr\\w*|peso (distinto|inferior|superior)|resbal\\w*|impact\\w*|dolor de espalda|sin protectores|sin autorizaci[oó]n|(?:bodega|puerta|compuerta|escotilla)[^.;]{0,40}(?:sin cerrar|sin asegurar|mal cerrad\\w*|no cierra))/i;\nconst MIN = /(?:retras\\w*[^.;]{0,60}?(\\d+)\\s*minutos|(\\d+)\\s*minutos\\s*(?:de\\s*)?(?:retraso|tarde))/i;\nconst m = MIN.exec(t);\nconst retraso = m ? parseInt(m[1] || m[2], 10) : 0;\nlet piso = null;\nif (CRIT.test(t)) { piso = 'critica'; motivos.push('señal crítica en el texto'); }\nelse if (ALTA.test(t) || retraso >= 10) { piso = 'alta'; motivos.push('señal alta o retraso >= 10 min'); }\nif (piso && (!ORDEN.includes(r.gravedad) || ORDEN.indexOf(r.gravedad) < ORDEN.indexOf(piso))) r.gravedad = piso;\nif (['alta','critica'].includes(r.gravedad)) r.aprobacion = true;\nif (!ORDEN.includes(r.gravedad) || !TIPOS.includes(r.tipo)) { r.aprobacion = true; if (!motivos.length) motivos.push('clasificación inválida'); }\nconst registro = { id: prep.id, texto: t, tipo: r.tipo, gravedad: r.gravedad, aprobacion: r.aprobacion, motivos_seguridad: motivos, fecha: new Date().toISOString(),\n  estado: r.aprobacion ? 'pendiente_de_aprobacion' : 'registrada', decision: null, decidido_en: null };\nconst sd = $getWorkflowStaticData('global');\nsd.registro = sd.registro || [];\nsd.registro.push(registro);\nreturn [{ json: registro }];\n"
         },
-        "id": "9242aed0-b1b8-4a36-b942-8aa3b36b7be6",
+        "id": "5fc98e19-ebfb-42f8-abf0-59e631d2036f",
         "name": "Validar y registrar",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [
           660,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Aviso SIMULADO enrutado por gravedad: no envia nada; deja constancia en el registro de avisos.\n// En produccion este nodo se sustituye por Telegram / Gmail / Slack (credenciales del propietario).\nconst x = $input.first().json;\nconst sd = $getWorkflowStaticData('global');\nsd.avisos = sd.avisos || [];\nconst RUTA = {\n  critica: { destino: 'Shift manager + safety officer', canal: 'chat (simulated)', plazo: 'immediate' },\n  alta:    { destino: 'Ramp supervisor', canal: 'email (simulated)', plazo: 'immediate, with approve/reject links' },\n  media:   { destino: 'End-of-shift digest', canal: 'digest (simulated)', plazo: 'end of shift' },\n};\nconst r = RUTA[x.gravedad];\nif (r) sd.avisos.push({ id: x.id, gravedad: x.gravedad, ...r, texto: x.texto, fecha: new Date().toISOString() });\nif (sd.avisos.length > 200) sd.avisos = sd.avisos.slice(-200);\nreturn [{ json: { ...x, aviso: r ? r.destino : 'none (log only)' } }];\n"
+        },
+        "id": "21f8b052-2a37-4a29-8b2b-7f466fa0d277",
+        "name": "Aviso simulado por gravedad",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
           0
         ]
       },
@@ -81,7 +94,7 @@
             },
             "conditions": [
               {
-                "id": "64047111-aaf8-4c9b-88f4-1e3ac5fb0c25",
+                "id": "8ac51c03-42ff-45ab-b114-bfee03b10070",
                 "leftValue": "={{ $json.aprobacion }}",
                 "rightValue": true,
                 "operator": {
@@ -95,12 +108,12 @@
           },
           "options": {}
         },
-        "id": "d4c209bc-07a4-4a0d-8c5f-b8851fb43188",
+        "id": "1050f7cf-aafd-4f24-9bc1-717fad92fdbd",
         "name": "Requiere aprobacion?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2,
         "position": [
-          880,
+          1100,
           0
         ]
       },
@@ -109,7 +122,7 @@
           "assignments": {
             "assignments": [
               {
-                "id": "456fb897-0d27-48d8-90ae-ccecfe6f4f4c",
+                "id": "95dd68ce-1cf9-457f-889e-43a873858bab",
                 "name": "estado",
                 "value": "pendiente_de_aprobacion_humana",
                 "type": "string"
@@ -119,12 +132,12 @@
           "includeOtherFields": true,
           "options": {}
         },
-        "id": "2d77c0e8-25c2-411d-b118-f5664dda1ecf",
+        "id": "674e0d0d-8431-4e5f-82ab-aa5e45dcd13f",
         "name": "Pendiente de aprobacion",
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          1100,
+          1320,
           -100
         ]
       },
@@ -133,7 +146,7 @@
           "assignments": {
             "assignments": [
               {
-                "id": "4c09bffb-84a3-438d-b1d2-c9fc193015f4",
+                "id": "0efcf0a3-7744-42aa-ba13-6663ce1a3430",
                 "name": "estado",
                 "value": "registrada",
                 "type": "string"
@@ -143,12 +156,12 @@
           "includeOtherFields": true,
           "options": {}
         },
-        "id": "cb34214a-4c2c-4402-8d66-324354c5a7b0",
+        "id": "37c43ed5-4236-49d9-bfed-25ef6eb09c48",
         "name": "Registrada",
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          1100,
+          1320,
           100
         ]
       },
@@ -159,7 +172,7 @@
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "73deec70-5388-47a2-b642-5961004082e4",
+        "id": "cdd853e4-d2ab-4b48-9f9c-784b9f1066a5",
         "name": "Webhook informe",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -167,13 +180,13 @@
           0,
           300
         ],
-        "webhookId": "7bdf493c-b9ef-430a-b4b6-a6e5e0551502"
+        "webhookId": "85679f94-a076-40f9-a9f1-9355c0b565d5"
       },
       {
         "parameters": {
           "jsCode": "const sd = $getWorkflowStaticData('global');\nconst reg = sd.registro || [];\nconst por = (k) => reg.reduce((a, x) => { const v = x[k] || 'sin_clasificar'; a[v] = (a[v] || 0) + 1; return a; }, {});\nreturn [{ json: {\n  total: reg.length,\n  pendientes_de_aprobacion: reg.filter(x => x.estado === 'pendiente_de_aprobacion').length,\n  por_estado: por('estado'),\n  por_tipo: por('tipo'),\n  por_gravedad: por('gravedad'),\n  ultimas: reg.slice(-5),\n} }];\n"
         },
-        "id": "5a75250e-660d-4079-8bee-c0590c2e7bd7",
+        "id": "7f99a5c0-8f2f-4383-9791-bf4a21792305",
         "name": "Resumen",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -189,7 +202,7 @@
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "1cdcdd13-7c63-462f-95d8-9a76e21f0991",
+        "id": "68f051dc-5197-46f0-be6d-11b9b7afc14e",
         "name": "Webhook pendientes",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -197,13 +210,13 @@
           0,
           500
         ],
-        "webhookId": "6703d37c-81af-4d90-8bd9-e7b91ea4476a"
+        "webhookId": "f4161066-29e2-4b8c-8ad2-ca626a5f8682"
       },
       {
         "parameters": {
           "jsCode": "const sd = $getWorkflowStaticData('global');\nconst base = 'http://localhost:5678'; // servidor local; cámbialo si se publica en otra URL\nconst pend = (sd.registro || []).filter(x => x.estado === 'pendiente_de_aprobacion');\nreturn [{ json: {\n  total_pendientes: pend.length,\n  pendientes: pend.map(x => ({\n    id: x.id, texto: x.texto, tipo: x.tipo, gravedad: x.gravedad, motivos_seguridad: x.motivos_seguridad,\n    aprobar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=aprobar',\n    rechazar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=rechazar',\n  })),\n} }];\n"
         },
-        "id": "60cc428e-93fd-4026-a04c-c693ec1331df",
+        "id": "7f48c633-198a-408d-9340-ac12c218c8e0",
         "name": "Listar pendientes",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -215,11 +228,41 @@
       {
         "parameters": {
           "httpMethod": "GET",
+          "path": "avisos",
+          "responseMode": "lastNode",
+          "options": {}
+        },
+        "id": "292bb8f4-6663-4c1f-a265-02124ca417be",
+        "name": "Webhook avisos",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          900
+        ],
+        "webhookId": "07b8bba3-7fb7-458a-b4a8-1fc31e657e63"
+      },
+      {
+        "parameters": {
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst av = sd.avisos || [];\nreturn [{ json: { total: av.length, avisos: av.slice(-20).reverse() } }];\n"
+        },
+        "id": "32f660dc-bb2d-48e5-b8e5-87bbeb481382",
+        "name": "Listar avisos",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          900
+        ]
+      },
+      {
+        "parameters": {
+          "httpMethod": "GET",
           "path": "decision",
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "2b54cc57-84bc-4e66-8cae-5dec04e27be3",
+        "id": "b49e8ef6-0498-44a7-b7f5-7d6c698369b5",
         "name": "Webhook decision",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -227,13 +270,13 @@
           0,
           700
         ],
-        "webhookId": "10cf6baa-a4ec-4b46-902e-7c08ab3cd686"
+        "webhookId": "13fd7c42-184f-4d62-978c-a7447162de15"
       },
       {
         "parameters": {
           "jsCode": "const q = $input.first().json.query || {};\nconst sd = $getWorkflowStaticData('global');\nconst reg = sd.registro || [];\nconst accion = String(q.accion || '');\nif (!['aprobar', 'rechazar'].includes(accion)) return [{ json: { ok: false, error: 'accion debe ser aprobar o rechazar' } }];\nconst x = reg.find(r => r.id === q.id);\nif (!x) return [{ json: { ok: false, error: 'incidencia no encontrada' } }];\nif (x.estado !== 'pendiente_de_aprobacion') return [{ json: { ok: false, error: 'ya decidida: ' + x.estado, id: x.id } }];\nx.decision = accion === 'aprobar' ? 'aprobada' : 'rechazada';\nx.estado = x.decision;\nx.decidido_en = new Date().toISOString();\nreturn [{ json: { ok: true, id: x.id, estado: x.estado, decidido_en: x.decidido_en } }];\n"
         },
-        "id": "5aced776-e29b-42a1-b50e-6f541bc3eaee",
+        "id": "3c1044c5-9eca-42f4-ba7d-9303c1ec71bd",
         "name": "Registrar decision",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -281,6 +324,17 @@
         "main": [
           [
             {
+              "node": "Aviso simulado por gravedad",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aviso simulado por gravedad": {
+        "main": [
+          [
+            {
               "node": "Requiere aprobacion?",
               "type": "main",
               "index": 0
@@ -322,6 +376,17 @@
           [
             {
               "node": "Listar pendientes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook avisos": {
+        "main": [
+          [
+            {
+              "node": "Listar avisos",
               "type": "main",
               "index": 0
             }

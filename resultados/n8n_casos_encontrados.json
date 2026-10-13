@@ -1,0 +1,17 @@
+[
+  {
+    "id": "F01",
+    "texto": "El vuelo procedente de Madrid llega con una bodega sin cerrar correctamente.",
+    "tipo": "equipaje",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "motivos_seguridad": [
+      "señal alta o retraso >= 10 min"
+    ],
+    "fecha": "2026-10-13T18:12:01.160Z",
+    "estado": "pendiente_de_aprobacion_humana",
+    "decision": null,
+    "decidido_en": null,
+    "aviso": "Ramp supervisor"
+  }
+]

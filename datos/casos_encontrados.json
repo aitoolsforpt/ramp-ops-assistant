@@ -1,0 +1,10 @@
+[
+  {
+    "id": "F01",
+    "texto": "El vuelo procedente de Madrid llega con una bodega sin cerrar correctamente.",
+    "tipo": "carga_balance",
+    "gravedad": "alta",
+    "aprobacion": true,
+    "nota": "Encontrado probando el panel a mano (2026-10-13): el modelo dio media/registrada y la red no lo cubria. Regla anadida despues; NO forma parte de la prueba final."
+  }
+]
