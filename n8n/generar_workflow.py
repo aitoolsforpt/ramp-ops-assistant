@@ -10,7 +10,7 @@ Flujo:
   GET /webhook/informe -> resumen por tipo, gravedad y estado
   GET /webhook/avisos -> avisos simulados enrutados por gravedad
   GET /webhook/pendientes -> incidencias esperando aprobación, con enlaces aprobar/rechazar
-  GET /webhook/decision?id=..&accion=aprobar|rechazar -> registra la decisión humana
+  GET /webhook/decision?id=..&accion=aprobar|rechazar&key=.. -> registra la decisión humana
 
 El modelo y la URL de Ollama son las constantes MODELO y OLLAMA_URL de este fichero (n8n bloquea $env en nodos Code).
 Sin claves ni datos reales.
@@ -22,6 +22,13 @@ from pathlib import Path
 # Cambia aquí el modelo o la URL de Ollama y vuelve a generar (n8n bloquea leer variables de entorno en los nodos Code).
 MODELO = "qwen2.5:7b-instruct"
 OLLAMA_URL = "http://127.0.0.1:11434"
+
+# Quién puede aprobar o rechazar: clave -> persona y rol. Las claves de abajo son DE DEMOSTRACIÓN (no son secretos reales):
+# cámbialas y vuelve a generar. La decisión queda firmada con el nombre asociado a la clave, no con un texto libre.
+APROBADORES = {
+    "demo-jefe-turno": {"nombre": "Jefe de turno (demo)", "rol": "jefe_turno"},
+    "demo-supervisor": {"nombre": "Supervisor (demo)", "rol": "supervisor"},
+}
 
 SISTEMA = (
     "Eres un asistente de operaciones de rampa de un aeropuerto. Clasifica cada incidencia.\\n"
@@ -83,7 +90,7 @@ if (piso && (!ORDEN.includes(r.gravedad) || ORDEN.indexOf(r.gravedad) < ORDEN.in
 if (['alta','critica'].includes(r.gravedad)) r.aprobacion = true;
 if (!ORDEN.includes(r.gravedad) || !TIPOS.includes(r.tipo)) { r.aprobacion = true; if (!motivos.length) motivos.push('clasificación inválida'); }
 const registro = { id: prep.id, texto: t, tipo: r.tipo, gravedad: r.gravedad, aprobacion: r.aprobacion, motivos_seguridad: motivos, fecha: new Date().toISOString(),
-  estado: r.aprobacion ? 'pendiente_de_aprobacion' : 'registrada', decision: null, decidido_en: null };
+  estado: r.aprobacion ? 'pendiente_de_aprobacion' : 'registrada', decision: null, decidido_en: null, decidido_por: null, decidido_rol: null };
 const sd = $getWorkflowStaticData('global');
 sd.registro = sd.registro || [];
 sd.registro.push(registro);
@@ -99,6 +106,7 @@ return [{ json: {
   por_estado: por('estado'),
   por_tipo: por('tipo'),
   por_gravedad: por('gravedad'),
+  decisiones: reg.filter(x => x.decidido_por).slice(-10).map(x => ({ id: x.id, gravedad: x.gravedad, decision: x.decision, por: x.decidido_por, rol: x.decidido_rol, en: x.decidido_en })),
   ultimas: reg.slice(-5),
 } }];
 """
@@ -110,8 +118,8 @@ return [{ json: {
   total_pendientes: pend.length,
   pendientes: pend.map(x => ({
     id: x.id, texto: x.texto, tipo: x.tipo, gravedad: x.gravedad, motivos_seguridad: x.motivos_seguridad,
-    aprobar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=aprobar',
-    rechazar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=rechazar',
+    aprobar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=aprobar&key=TU_CLAVE',
+    rechazar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=rechazar&key=TU_CLAVE',
   })),
 } }];
 """
@@ -119,6 +127,9 @@ return [{ json: {
 DECIDIR = r"""const q = $input.first().json.query || {};
 const sd = $getWorkflowStaticData('global');
 const reg = sd.registro || [];
+const APROBADORES = __APROBADORES__;
+const quien = APROBADORES[String(q.key || '')];
+if (!quien) return [{ json: { ok: false, error: 'clave de aprobador no valida o ausente (parametro key)' } }];
 const accion = String(q.accion || '');
 if (!['aprobar', 'rechazar'].includes(accion)) return [{ json: { ok: false, error: 'accion debe ser aprobar o rechazar' } }];
 const x = reg.find(r => r.id === q.id);
@@ -127,8 +138,11 @@ if (x.estado !== 'pendiente_de_aprobacion') return [{ json: { ok: false, error: 
 x.decision = accion === 'aprobar' ? 'aprobada' : 'rechazada';
 x.estado = x.decision;
 x.decidido_en = new Date().toISOString();
-return [{ json: { ok: true, id: x.id, estado: x.estado, decidido_en: x.decidido_en } }];
-"""
+x.decidido_por = quien.nombre;
+x.decidido_rol = quien.rol;
+return [{ json: { ok: true, id: x.id, estado: x.estado, decidido_en: x.decidido_en, decidido_por: x.decidido_por, rol: x.decidido_rol } }];
+""".replace("__APROBADORES__", json.dumps(APROBADORES, ensure_ascii=False))
+
 
 AVISO = r"""// Aviso SIMULADO enrutado por gravedad: no envia nada; deja constancia en el registro de avisos.
 // En produccion este nodo se sustituye por Telegram / Gmail / Slack (credenciales del propietario).

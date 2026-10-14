@@ -10,7 +10,7 @@
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "48f3ff4e-9629-4d84-9dcb-cf1889bd8b09",
+        "id": "6a114bf0-9a5b-4509-a325-ec266f92d670",
         "name": "Webhook incidencia",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -18,13 +18,13 @@
           0,
           0
         ],
-        "webhookId": "75be6604-0a4d-42a3-901d-ba2d992969d9"
+        "webhookId": "24ade39e-ce5a-4c43-8f95-22d4bdc6d8f0"
       },
       {
         "parameters": {
           "jsCode": "const body = $input.first().json.body || {};\nconst texto = String(body.texto || '').trim();\nconst esquema = {\n  type: 'object',\n  properties: {\n    tipo: { type: 'string', enum: ['equipaje','carga_balance','equipo_gse','seguridad_prl','personal','documentacion','otro'] },\n    gravedad: { type: 'string', enum: ['baja','media','alta','critica'] },\n    aprobacion: { type: 'boolean' },\n  },\n  required: ['tipo','gravedad','aprobacion'],\n};\nconst modelo = 'qwen2.5:7b-instruct';\nreturn [{ json: {\n  id: body.id || ('INC-' + Date.now()),\n  texto,\n  ollamaBody: {\n    model: modelo, stream: false, format: esquema, options: { temperature: 0 },\n    messages: [ { role: 'system', content: 'Eres un asistente de operaciones de rampa de un aeropuerto. Clasifica cada incidencia.\\nTipos: equipaje, carga_balance, equipo_gse, seguridad_prl, personal, documentacion, otro.\\nGravedad:\\n- critica: riesgo para personas o para la seguridad de la aeronave (fuego, derrame peligroso, zona de hélices, mercancía peligrosa sin documentación).\\n- alta: retraso notable (10 minutos o más), daño material relevante, lesión de una persona o incumplimiento de seguridad.\\n- media: incidencia gestionada sin retraso que afecta al proceso.\\n- baja: informativa o sin impacto.\\naprobacion es true si la gravedad es alta o critica, y false en otro caso.\\nResponde solo con el JSON pedido.' }, { role: 'user', content: texto } ],\n  },\n} }];\n"
         },
-        "id": "4a17c226-ce63-4099-81ed-5785e87430a4",
+        "id": "1c527d8a-9e7a-4488-93fd-20a698609311",
         "name": "Preparar peticion",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -44,7 +44,7 @@
             "timeout": 300000
           }
         },
-        "id": "4febe131-86ab-4d52-9ec7-df7420ebe40b",
+        "id": "1483c2c2-ee19-4025-9025-d7c02cc5cf73",
         "name": "Modelo local (Ollama)",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.2,
@@ -59,9 +59,9 @@
       },
       {
         "parameters": {
-          "jsCode": "// Valida la salida del modelo, aplica la red de seguridad y registra SIEMPRE la incidencia.\nconst prep = $('Preparar peticion').first().json;\nconst entrada = $input.first().json;\nconst ORDEN = ['baja','media','alta','critica'];\nconst TIPOS = ['equipaje','carga_balance','equipo_gse','seguridad_prl','personal','documentacion','otro'];\nlet r = {}; let motivos = [];\ntry {\n  if (entrada.error) throw new Error('fallo del modelo');\n  r = JSON.parse(entrada.message.content);\n} catch (e) {\n  r = { tipo: null, gravedad: null, aprobacion: null };\n  motivos.push('respuesta inválida o error del modelo');\n}\nconst t = prep.texto;\nconst CRIT = /\\b(fuego|humo|llamas?|incendio|combustible|derrame|fuga|peligros[ao]|h[eé]lices?|atrapad[oa]|herid[oa]s?|lesi[oó]n|quemadura|desmay\\w*|colisi[oó]n|choque|explosi\\w*)\\b/i;\nconst ALTA = /(sin chaleco|sin formaci[oó]n|formaci[oó]n vigente|cable pelado|exceso de peso|desequilibr\\w*|peso (distinto|inferior|superior)|resbal\\w*|impact\\w*|dolor de espalda|sin protectores|sin autorizaci[oó]n|(?:bodega|puerta|compuerta|escotilla)[^.;]{0,40}(?:sin cerrar|sin asegurar|mal cerrad\\w*|no cierra))/i;\nconst MIN = /(?:retras\\w*[^.;]{0,60}?(\\d+)\\s*minutos|(\\d+)\\s*minutos\\s*(?:de\\s*)?(?:retraso|tarde))/i;\nconst m = MIN.exec(t);\nconst retraso = m ? parseInt(m[1] || m[2], 10) : 0;\nlet piso = null;\nif (CRIT.test(t)) { piso = 'critica'; motivos.push('señal crítica en el texto'); }\nelse if (ALTA.test(t) || retraso >= 10) { piso = 'alta'; motivos.push('señal alta o retraso >= 10 min'); }\nif (piso && (!ORDEN.includes(r.gravedad) || ORDEN.indexOf(r.gravedad) < ORDEN.indexOf(piso))) r.gravedad = piso;\nif (['alta','critica'].includes(r.gravedad)) r.aprobacion = true;\nif (!ORDEN.includes(r.gravedad) || !TIPOS.includes(r.tipo)) { r.aprobacion = true; if (!motivos.length) motivos.push('clasificación inválida'); }\nconst registro = { id: prep.id, texto: t, tipo: r.tipo, gravedad: r.gravedad, aprobacion: r.aprobacion, motivos_seguridad: motivos, fecha: new Date().toISOString(),\n  estado: r.aprobacion ? 'pendiente_de_aprobacion' : 'registrada', decision: null, decidido_en: null };\nconst sd = $getWorkflowStaticData('global');\nsd.registro = sd.registro || [];\nsd.registro.push(registro);\nreturn [{ json: registro }];\n"
+          "jsCode": "// Valida la salida del modelo, aplica la red de seguridad y registra SIEMPRE la incidencia.\nconst prep = $('Preparar peticion').first().json;\nconst entrada = $input.first().json;\nconst ORDEN = ['baja','media','alta','critica'];\nconst TIPOS = ['equipaje','carga_balance','equipo_gse','seguridad_prl','personal','documentacion','otro'];\nlet r = {}; let motivos = [];\ntry {\n  if (entrada.error) throw new Error('fallo del modelo');\n  r = JSON.parse(entrada.message.content);\n} catch (e) {\n  r = { tipo: null, gravedad: null, aprobacion: null };\n  motivos.push('respuesta inválida o error del modelo');\n}\nconst t = prep.texto;\nconst CRIT = /\\b(fuego|humo|llamas?|incendio|combustible|derrame|fuga|peligros[ao]|h[eé]lices?|atrapad[oa]|herid[oa]s?|lesi[oó]n|quemadura|desmay\\w*|colisi[oó]n|choque|explosi\\w*)\\b/i;\nconst ALTA = /(sin chaleco|sin formaci[oó]n|formaci[oó]n vigente|cable pelado|exceso de peso|desequilibr\\w*|peso (distinto|inferior|superior)|resbal\\w*|impact\\w*|dolor de espalda|sin protectores|sin autorizaci[oó]n|(?:bodega|puerta|compuerta|escotilla)[^.;]{0,40}(?:sin cerrar|sin asegurar|mal cerrad\\w*|no cierra))/i;\nconst MIN = /(?:retras\\w*[^.;]{0,60}?(\\d+)\\s*minutos|(\\d+)\\s*minutos\\s*(?:de\\s*)?(?:retraso|tarde))/i;\nconst m = MIN.exec(t);\nconst retraso = m ? parseInt(m[1] || m[2], 10) : 0;\nlet piso = null;\nif (CRIT.test(t)) { piso = 'critica'; motivos.push('señal crítica en el texto'); }\nelse if (ALTA.test(t) || retraso >= 10) { piso = 'alta'; motivos.push('señal alta o retraso >= 10 min'); }\nif (piso && (!ORDEN.includes(r.gravedad) || ORDEN.indexOf(r.gravedad) < ORDEN.indexOf(piso))) r.gravedad = piso;\nif (['alta','critica'].includes(r.gravedad)) r.aprobacion = true;\nif (!ORDEN.includes(r.gravedad) || !TIPOS.includes(r.tipo)) { r.aprobacion = true; if (!motivos.length) motivos.push('clasificación inválida'); }\nconst registro = { id: prep.id, texto: t, tipo: r.tipo, gravedad: r.gravedad, aprobacion: r.aprobacion, motivos_seguridad: motivos, fecha: new Date().toISOString(),\n  estado: r.aprobacion ? 'pendiente_de_aprobacion' : 'registrada', decision: null, decidido_en: null, decidido_por: null, decidido_rol: null };\nconst sd = $getWorkflowStaticData('global');\nsd.registro = sd.registro || [];\nsd.registro.push(registro);\nreturn [{ json: registro }];\n"
         },
-        "id": "5fc98e19-ebfb-42f8-abf0-59e631d2036f",
+        "id": "53938b43-7d87-4a85-a4cd-16f0b760d5af",
         "name": "Validar y registrar",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -74,7 +74,7 @@
         "parameters": {
           "jsCode": "// Aviso SIMULADO enrutado por gravedad: no envia nada; deja constancia en el registro de avisos.\n// En produccion este nodo se sustituye por Telegram / Gmail / Slack (credenciales del propietario).\nconst x = $input.first().json;\nconst sd = $getWorkflowStaticData('global');\nsd.avisos = sd.avisos || [];\nconst RUTA = {\n  critica: { destino: 'Shift manager + safety officer', canal: 'chat (simulated)', plazo: 'immediate' },\n  alta:    { destino: 'Ramp supervisor', canal: 'email (simulated)', plazo: 'immediate, with approve/reject links' },\n  media:   { destino: 'End-of-shift digest', canal: 'digest (simulated)', plazo: 'end of shift' },\n};\nconst r = RUTA[x.gravedad];\nif (r) sd.avisos.push({ id: x.id, gravedad: x.gravedad, ...r, texto: x.texto, fecha: new Date().toISOString() });\nif (sd.avisos.length > 200) sd.avisos = sd.avisos.slice(-200);\nreturn [{ json: { ...x, aviso: r ? r.destino : 'none (log only)' } }];\n"
         },
-        "id": "21f8b052-2a37-4a29-8b2b-7f466fa0d277",
+        "id": "780b3f2d-37ea-43a0-9d14-a79a1f9ed753",
         "name": "Aviso simulado por gravedad",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -94,7 +94,7 @@
             },
             "conditions": [
               {
-                "id": "8ac51c03-42ff-45ab-b114-bfee03b10070",
+                "id": "945fa29d-7150-47fb-bfdd-f9730a869c51",
                 "leftValue": "={{ $json.aprobacion }}",
                 "rightValue": true,
                 "operator": {
@@ -108,7 +108,7 @@
           },
           "options": {}
         },
-        "id": "1050f7cf-aafd-4f24-9bc1-717fad92fdbd",
+        "id": "b0e30e64-f889-41be-a24f-42bb3b1e042c",
         "name": "Requiere aprobacion?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2,
@@ -122,7 +122,7 @@
           "assignments": {
             "assignments": [
               {
-                "id": "95dd68ce-1cf9-457f-889e-43a873858bab",
+                "id": "3934049c-8371-46e1-b1e1-418befd67a93",
                 "name": "estado",
                 "value": "pendiente_de_aprobacion_humana",
                 "type": "string"
@@ -132,7 +132,7 @@
           "includeOtherFields": true,
           "options": {}
         },
-        "id": "674e0d0d-8431-4e5f-82ab-aa5e45dcd13f",
+        "id": "515a0ca7-946e-4804-aab4-f487f5b101a2",
         "name": "Pendiente de aprobacion",
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
@@ -146,7 +146,7 @@
           "assignments": {
             "assignments": [
               {
-                "id": "0efcf0a3-7744-42aa-ba13-6663ce1a3430",
+                "id": "fbc636aa-e2ef-4f95-bb5b-988a85c1b4df",
                 "name": "estado",
                 "value": "registrada",
                 "type": "string"
@@ -156,7 +156,7 @@
           "includeOtherFields": true,
           "options": {}
         },
-        "id": "37c43ed5-4236-49d9-bfed-25ef6eb09c48",
+        "id": "70b524c4-5f81-4c47-a21e-ba0631a8cc11",
         "name": "Registrada",
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
@@ -172,7 +172,7 @@
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "cdd853e4-d2ab-4b48-9f9c-784b9f1066a5",
+        "id": "13515646-4deb-4cbe-bd93-2c0e11fab423",
         "name": "Webhook informe",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -180,13 +180,13 @@
           0,
           300
         ],
-        "webhookId": "85679f94-a076-40f9-a9f1-9355c0b565d5"
+        "webhookId": "aff0fdfc-88f1-4f7d-9b29-dd8bfefb997c"
       },
       {
         "parameters": {
-          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst reg = sd.registro || [];\nconst por = (k) => reg.reduce((a, x) => { const v = x[k] || 'sin_clasificar'; a[v] = (a[v] || 0) + 1; return a; }, {});\nreturn [{ json: {\n  total: reg.length,\n  pendientes_de_aprobacion: reg.filter(x => x.estado === 'pendiente_de_aprobacion').length,\n  por_estado: por('estado'),\n  por_tipo: por('tipo'),\n  por_gravedad: por('gravedad'),\n  ultimas: reg.slice(-5),\n} }];\n"
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst reg = sd.registro || [];\nconst por = (k) => reg.reduce((a, x) => { const v = x[k] || 'sin_clasificar'; a[v] = (a[v] || 0) + 1; return a; }, {});\nreturn [{ json: {\n  total: reg.length,\n  pendientes_de_aprobacion: reg.filter(x => x.estado === 'pendiente_de_aprobacion').length,\n  por_estado: por('estado'),\n  por_tipo: por('tipo'),\n  por_gravedad: por('gravedad'),\n  decisiones: reg.filter(x => x.decidido_por).slice(-10).map(x => ({ id: x.id, gravedad: x.gravedad, decision: x.decision, por: x.decidido_por, rol: x.decidido_rol, en: x.decidido_en })),\n  ultimas: reg.slice(-5),\n} }];\n"
         },
-        "id": "7f99a5c0-8f2f-4383-9791-bf4a21792305",
+        "id": "032e9e44-f85b-4f91-947b-74164e7af030",
         "name": "Resumen",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -202,7 +202,7 @@
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "68f051dc-5197-46f0-be6d-11b9b7afc14e",
+        "id": "0d2c57c2-8f61-4cbd-adb5-44bbe76ed359",
         "name": "Webhook pendientes",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -210,13 +210,13 @@
           0,
           500
         ],
-        "webhookId": "f4161066-29e2-4b8c-8ad2-ca626a5f8682"
+        "webhookId": "8434a02b-cb57-42c9-bbc9-7652cb9cc111"
       },
       {
         "parameters": {
-          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst base = 'http://localhost:5678'; // servidor local; cámbialo si se publica en otra URL\nconst pend = (sd.registro || []).filter(x => x.estado === 'pendiente_de_aprobacion');\nreturn [{ json: {\n  total_pendientes: pend.length,\n  pendientes: pend.map(x => ({\n    id: x.id, texto: x.texto, tipo: x.tipo, gravedad: x.gravedad, motivos_seguridad: x.motivos_seguridad,\n    aprobar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=aprobar',\n    rechazar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=rechazar',\n  })),\n} }];\n"
+          "jsCode": "const sd = $getWorkflowStaticData('global');\nconst base = 'http://localhost:5678'; // servidor local; cámbialo si se publica en otra URL\nconst pend = (sd.registro || []).filter(x => x.estado === 'pendiente_de_aprobacion');\nreturn [{ json: {\n  total_pendientes: pend.length,\n  pendientes: pend.map(x => ({\n    id: x.id, texto: x.texto, tipo: x.tipo, gravedad: x.gravedad, motivos_seguridad: x.motivos_seguridad,\n    aprobar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=aprobar&key=TU_CLAVE',\n    rechazar: base + '/webhook/decision?id=' + encodeURIComponent(x.id) + '&accion=rechazar&key=TU_CLAVE',\n  })),\n} }];\n"
         },
-        "id": "7f48c633-198a-408d-9340-ac12c218c8e0",
+        "id": "d946a53c-fdfe-4030-9751-4a82fc902a98",
         "name": "Listar pendientes",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -232,7 +232,7 @@
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "292bb8f4-6663-4c1f-a265-02124ca417be",
+        "id": "198a333f-25a4-4f6a-82fa-c24358cb94db",
         "name": "Webhook avisos",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -240,13 +240,13 @@
           0,
           900
         ],
-        "webhookId": "07b8bba3-7fb7-458a-b4a8-1fc31e657e63"
+        "webhookId": "9900e90e-ed95-4a9b-8c70-b3d71b8f2ac0"
       },
       {
         "parameters": {
           "jsCode": "const sd = $getWorkflowStaticData('global');\nconst av = sd.avisos || [];\nreturn [{ json: { total: av.length, avisos: av.slice(-20).reverse() } }];\n"
         },
-        "id": "32f660dc-bb2d-48e5-b8e5-87bbeb481382",
+        "id": "d5707e7b-f65d-4c49-8b32-9e368f4db90a",
         "name": "Listar avisos",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -262,7 +262,7 @@
           "responseMode": "lastNode",
           "options": {}
         },
-        "id": "b49e8ef6-0498-44a7-b7f5-7d6c698369b5",
+        "id": "01e12d20-854c-4fe9-b511-86920f892156",
         "name": "Webhook decision",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -270,13 +270,13 @@
           0,
           700
         ],
-        "webhookId": "13fd7c42-184f-4d62-978c-a7447162de15"
+        "webhookId": "7783191e-3647-40b1-9b47-748909eb5c4e"
       },
       {
         "parameters": {
-          "jsCode": "const q = $input.first().json.query || {};\nconst sd = $getWorkflowStaticData('global');\nconst reg = sd.registro || [];\nconst accion = String(q.accion || '');\nif (!['aprobar', 'rechazar'].includes(accion)) return [{ json: { ok: false, error: 'accion debe ser aprobar o rechazar' } }];\nconst x = reg.find(r => r.id === q.id);\nif (!x) return [{ json: { ok: false, error: 'incidencia no encontrada' } }];\nif (x.estado !== 'pendiente_de_aprobacion') return [{ json: { ok: false, error: 'ya decidida: ' + x.estado, id: x.id } }];\nx.decision = accion === 'aprobar' ? 'aprobada' : 'rechazada';\nx.estado = x.decision;\nx.decidido_en = new Date().toISOString();\nreturn [{ json: { ok: true, id: x.id, estado: x.estado, decidido_en: x.decidido_en } }];\n"
+          "jsCode": "const q = $input.first().json.query || {};\nconst sd = $getWorkflowStaticData('global');\nconst reg = sd.registro || [];\nconst APROBADORES = {\"demo-jefe-turno\": {\"nombre\": \"Jefe de turno (demo)\", \"rol\": \"jefe_turno\"}, \"demo-supervisor\": {\"nombre\": \"Supervisor (demo)\", \"rol\": \"supervisor\"}};\nconst quien = APROBADORES[String(q.key || '')];\nif (!quien) return [{ json: { ok: false, error: 'clave de aprobador no valida o ausente (parametro key)' } }];\nconst accion = String(q.accion || '');\nif (!['aprobar', 'rechazar'].includes(accion)) return [{ json: { ok: false, error: 'accion debe ser aprobar o rechazar' } }];\nconst x = reg.find(r => r.id === q.id);\nif (!x) return [{ json: { ok: false, error: 'incidencia no encontrada' } }];\nif (x.estado !== 'pendiente_de_aprobacion') return [{ json: { ok: false, error: 'ya decidida: ' + x.estado, id: x.id } }];\nx.decision = accion === 'aprobar' ? 'aprobada' : 'rechazada';\nx.estado = x.decision;\nx.decidido_en = new Date().toISOString();\nx.decidido_por = quien.nombre;\nx.decidido_rol = quien.rol;\nreturn [{ json: { ok: true, id: x.id, estado: x.estado, decidido_en: x.decidido_en, decidido_por: x.decidido_por, rol: x.decidido_rol } }];\n"
         },
-        "id": "3c1044c5-9eca-42f4-ba7d-9303c1ec71bd",
+        "id": "c4a6a69b-3195-4cd5-802e-163d35436d22",
         "name": "Registrar decision",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,

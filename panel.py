@@ -31,7 +31,9 @@ table{border-collapse:collapse}td,th{padding:4px 14px 4px 0;text-align:left}.mut
 <section><h2>1. Report an incident</h2>
 <textarea id=t placeholder="Free text, e.g. Sale humo de una bodega durante la carga."></textarea>
 <p><button id=send>Classify</button> <span class=muted id=st></span></p><div id=res></div></section>
-<section><h2>2. Waiting for human approval</h2><div id=pend class=muted>-</div></section>
+<section><h2>2. Waiting for human approval</h2>
+<p class=muted>Approver key (decisions are signed with the name linked to the key): <input id=key type=password placeholder="e.g. demo-supervisor" autocomplete=off></p>
+<div id=pend class=muted>-</div></section>
 <section><h2>3. Simulated alerts (routing by severity)</h2><div id=av class=muted>-</div></section>
 <section><h2>4. Report</h2><div id=rep class=muted>-</div></section></main>
 <script>
@@ -52,9 +54,10 @@ async function refresh(){
  const tb=(o)=>'<table>'+Object.entries(o).map(([k,v])=>`<tr><td>${esc(k)}</td><td><b>${v}</b></td></tr>`).join('')+'</table>';
  $('rep').innerHTML=`<p>Total incidents: <b>${r.total}</b> &middot; pending: <b>${r.pendientes_de_aprobacion}</b></p>
   <div style="display:flex;gap:40px;flex-wrap:wrap"><div><b>By severity</b>${tb(r.por_gravedad)}</div>
-  <div><b>By type</b>${tb(r.por_tipo)}</div><div><b>By status</b>${tb(r.por_estado)}</div></div>`;
+  <div><b>By type</b>${tb(r.por_tipo)}</div><div><b>By status</b>${tb(r.por_estado)}</div></div>
+  <p><b>Decisions (who signed)</b></p>${(r.decisiones||[]).map(d=>`<div class=muted>${esc(d.id)}: ${esc(d.decision)} by ${esc(d.por)} &middot; ${esc(d.en)}</div>`).join('')||'<div class=muted>None yet.</div>'}`;
 }
-async function dec(id,a){await j('/api/decision?id='+encodeURIComponent(id)+'&accion='+a);refresh()}
+async function dec(id,a){const r=await j('/api/decision?id='+encodeURIComponent(id)+'&accion='+a+'&key='+encodeURIComponent($('key').value));if(!r.ok)alert(r.error);refresh()}
 $('send').onclick=async()=>{
  const t=$('t').value.trim();if(!t)return;$('send').disabled=true;$('st').textContent='Classifying with the local model (can take ~20 s)...';
  try{const r=await j('/api/incidencia',{method:'POST',headers:{'Content-Type':'application/json'},
