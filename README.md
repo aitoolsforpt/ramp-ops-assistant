@@ -4,6 +4,8 @@ An n8n workflow that receives free-text operational incidents (in Spanish), clas
 forces a **human approval** step for anything serious, keeps a register, and produces an aggregate report.
 It is measured with held-out test cases, not by eye.
 
+▶ **[Watch the 85-second demo](demo-video.mp4)** (no audio, on-screen text)
+
 > **All data is synthetic.** Nothing here comes from a real airline, handler, flight, person or procedure.
 > Incident texts, labels and code comments are in Spanish (the language of the use case).
 
